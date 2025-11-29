@@ -3,16 +3,15 @@ name = "ndev-batch"
 dynamic = ["version"]
 description = "Flexible batch processing utilities"
 readme = "README.md"
-license = {file = "LICENSE"}
+license = "BSD-3-Clause"
+license-files = ["LICENSE"]
 authors = [
   {name = "Tim Monko"},
   {email = "timmonko@gmail.com"},
 ]
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
-    "Framework :: napari",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: BSD License",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
@@ -29,13 +28,7 @@ requires-python = ">=3.10"
 # or any other Qt bindings directly (e.g. PyQt5, PySide2).
 # See best practices: https://napari.org/stable/plugins/building_a_plugin/best_practices.html
 dependencies = [
-    "numpy",
 ]
-
-[project.optional-dependencies]
-# Allow easily installation with the full, default napari installation
-# (including Qt backend) using ndev-batch[all].
-all = ["napari[all]"]
 
 [dependency-groups]
 dev = [
@@ -78,12 +71,9 @@ xfail_strict = true
 log_cli_level = "INFO"
 testpaths = ["tests"]
 
-[tool.black]
-line-length = 79
-target-version = ['py310', 'py311', 'py312', 'py313']
-
 [tool.ruff]
 line-length = 79
+format.quote-style = "single"
 lint.select = [
     "E", "F", "W", #flake8
     "UP", # pyupgrade
@@ -98,29 +88,7 @@ lint.select = [
     "SIM", # flake8-simplify
 ]
 lint.ignore = [
-    "E501", # line too long. let black handle this
+    "E501", # line too long. handled by formatter
     "UP006", "UP007", # type annotation. As using magicgui require runtime type annotation then we disable this.
-]
-
-exclude = [
-    ".bzr",
-    ".direnv",
-    ".eggs",
-    ".git",
-    ".mypy_cache",
-    ".pants.d",
-    ".ruff_cache",
-    ".svn",
-    ".tox",
-    ".venv",
-    "__pypackages__",
-    "_build",
-    "buck-out",
-    "build",
-    "dist",
-    "node_modules",
-    "venv",
-    "*vendored*",
-    "*_vendor*",
 ]
 fix = true
