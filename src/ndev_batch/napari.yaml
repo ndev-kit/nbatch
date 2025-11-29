@@ -1,8 +1,10 @@
 name: ndev-batch
 display_name: ndev Batch
-# use 'hidden' to remove plugin from napari hub search results
+# This package provides batch processing utilities, not napari widgets
+# It is registered with napari for visibility in the plugin ecosystem
 visibility: public
-# see https://napari.org/stable/plugins/technical_references/manifest.html#fields for valid categories
-# categories: []
+categories:
+  - Utilities
 contributions:
-  commands:
+  # No commands or widgets - this is a utility library
+  commands: []
