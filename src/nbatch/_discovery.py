@@ -187,6 +187,6 @@ def is_batch_input(item: object) -> bool:
     >>> is_batch_input("single.tif")
     False
     """
-    if isinstance(item, (list, tuple)):
+    if isinstance(item, list | tuple):
         return True
     return isinstance(item, Path) and item.is_dir()

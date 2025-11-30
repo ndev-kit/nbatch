@@ -31,6 +31,18 @@ dependencies = [
     "natsort",
 ]
 
+[project.optional-dependencies]
+napari = [
+    "napari",
+]
+qtpy-backed = [
+    "pyqt6",
+]
+all = [
+    "nbatch[napari]",
+    "nbatch[qtpy-backed]",
+]
+
 [dependency-groups]
 dev = [
     "tox-uv",
