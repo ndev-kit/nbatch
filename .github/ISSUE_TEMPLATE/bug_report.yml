@@ -1,5 +1,5 @@
 name: "\U0001F41B Bug Report"
-description: Report a bug encountered while using ndev-batch
+description: Report a bug encountered while using nbatch
 labels:
   - "bug"
 

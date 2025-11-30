@@ -1,10 +1,10 @@
 # Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
 _commit: v2.0.1
 _src_path: C:\Users\timmo\Documents\GitHub\napari-plugin-template
-display_name: ndev Batch
+display_name: nbatch
 email: timmonko@gmail.com
 full_name: Tim Monko
-github_repository_url: https://github.com/ndev-kit/ndev-batch
+github_repository_url: https://github.com/ndev-kit/nbatch
 github_username_or_organization: ndev-kit
 include_reader_plugin: false
 include_sample_data_plugin: false
