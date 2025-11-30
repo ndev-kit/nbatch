@@ -11,6 +11,7 @@ authors = [
 ]
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
+    "Framework :: napari",
     "Intended Audience :: Developers",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
@@ -31,11 +32,25 @@ dependencies = [
     "natsort",
 ]
 
+[project.optional-dependencies]
+napari = [
+    "napari",
+]
+qtpy-backend = [
+    "pyqt6",
+]
+all = [
+    "nbatch[napari]",
+    "nbatch[qtpy-backed]",
+]
+
 [dependency-groups]
 dev = [
     "tox-uv",
     "pytest",  # https://docs.pytest.org/en/latest/contents.html
     "pytest-cov",  # https://pytest-cov.readthedocs.io/en/latest/
+    "pytest-qt",  # Qt testing utilities (qtbot fixture)
+    "napari[pyqt6]",  # Include napari and Qt for full test coverage
 ]
 
 [project.entry-points."napari.manifest"]

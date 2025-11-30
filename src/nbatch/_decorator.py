@@ -172,9 +172,9 @@ def batch(
                 items = discover_files(
                     first_arg, patterns=patterns, recursive=recursive
                 )
-            elif isinstance(first_arg, (list, tuple)):
+            elif isinstance(first_arg, list | tuple):
                 # Could be paths or other items
-                if first_arg and isinstance(first_arg[0], (str, Path)):
+                if first_arg and isinstance(first_arg[0], str | Path):
                     items = discover_files(first_arg)
                 else:
                     items = list(first_arg)

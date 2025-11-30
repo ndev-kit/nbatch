@@ -17,9 +17,11 @@ nbatch provides a foundation for batch processing operations. It's designed to w
 
 - **`@batch` decorator** - Transform single-item functions into batch-capable functions
 - **`BatchContext`** - Track progress through batch operations
+- **`BatchRunner`** - Orchestrate batch operations with threading, progress callbacks, and cancellation
 - **`discover_files()`** - Flexible file discovery with natural sorting (like file explorers)
 - **`batch_logger`** - Scoped logging for batch operations with headers/footers
 - **Minimal dependencies** - Only requires natsort for natural file ordering
+- **Optional napari integration** - Uses napari's threading when available, falls back to standard threads
 
 ## Installation
 
@@ -181,7 +183,67 @@ Batch processing completed at 2025-01-29 10:35:00
 
 ## Integration with napari
 
-nbatch is designed to work seamlessly with napari's `@thread_worker`:
+### Using BatchRunner (Recommended)
+
+`BatchRunner` provides clean orchestration for widgets with threading, progress callbacks, and cancellation:
+
+```python
+from nbatch import batch, BatchRunner
+
+# Define your processing function (pure, testable)
+@batch(on_error='continue')
+def process_image(path, model, output_dir):
+    result = model.predict(load_image(path))
+    save_result(result, output_dir / path.name)
+    return result
+
+# In your widget class
+class MyWidget:
+    def __init__(self, viewer):
+        self._viewer = viewer
+        
+        # Create runner once - reusable for all batches
+        self.runner = BatchRunner(
+            on_item_complete=self._on_item_complete,
+            on_complete=self._on_batch_complete,
+            on_error=self._on_item_error,
+            on_cancel=self._on_cancelled,
+        )
+        
+        self._run_button.clicked.connect(self.run_batch)
+        self._cancel_button.clicked.connect(self.runner.cancel)
+    
+    def _on_item_complete(self, result, ctx):
+        """Called after each item completes."""
+        self._progress_bar.setValue(ctx.index + 1)
+        # Optionally add result to viewer
+        if result is not None:
+            self._viewer.add_image(result, name=f"Result {ctx.index}")
+    
+    def _on_batch_complete(self):
+        self._progress_bar.label = "Complete!"
+    
+    def _on_item_error(self, ctx, exception):
+        self._progress_bar.label = f"Error on {ctx.item.name}"
+    
+    def _on_cancelled(self):
+        self._progress_bar.label = "Cancelled"
+    
+    def run_batch(self):
+        """Triggered by 'Run' button - just one line!"""
+        self._progress_bar.max = len(self.files)
+        self.runner.run(
+            process_image,
+            self.files,
+            model=self.model,
+            output_dir=self.output_dir,
+            log_file=self.output_dir / "batch.log",
+        )
+```
+
+### Using @thread_worker directly
+
+For more control, use napari's `@thread_worker` with the `@batch` decorator:
 
 ```python
 from napari.qt.threading import thread_worker
@@ -265,6 +327,40 @@ def batch_logger(
     console: bool = True,  # Output to stderr
     file_mode: Literal['w', 'a'] = 'a',  # Append by default
 ) -> Generator[BatchLogger, None, None]: ...
+```
+
+### `BatchRunner`
+
+```python
+class BatchRunner:
+    def __init__(
+        self,
+        on_item_complete: Callable[[Any, BatchContext], None] | None = None,
+        on_complete: Callable[[], None] | None = None,
+        on_error: Callable[[BatchContext, Exception], None] | None = None,
+        on_cancel: Callable[[], None] | None = None,
+    ): ...
+    
+    def run(
+        self,
+        func: Callable,
+        items: Any,
+        *args,
+        threaded: bool = True,
+        log_file: str | Path | None = None,
+        log_header: Mapping[str, object] | None = None,
+        patterns: str | Sequence[str] = '*',
+        recursive: bool = False,
+        **kwargs,
+    ) -> None: ...
+    
+    def cancel(self) -> None: ...
+    
+    @property
+    def is_running(self) -> bool: ...
+    
+    @property
+    def was_cancelled(self) -> bool: ...
 ```
 
 ## Contributing
