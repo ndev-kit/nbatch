@@ -36,7 +36,7 @@ dependencies = [
 napari = [
     "napari",
 ]
-qtpy-backed = [
+qtpy-backend = [
     "pyqt6",
 ]
 all = [
