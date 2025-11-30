@@ -13,6 +13,6 @@ include_writer_plugin: false
 install_dependabot: true
 install_precommit: true
 license: BSD-3
-module_name: ndev_batch
-plugin_name: ndev-batch
+module_name: nbatch
+plugin_name: nbatch
 short_description: Flexible batch processing utilities

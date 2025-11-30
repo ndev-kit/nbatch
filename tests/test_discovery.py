@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from ndev_batch import discover_files, is_batch_input
+from nbatch import discover_files, is_batch_input
 
 
 class TestDiscoverFiles:

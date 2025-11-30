@@ -1,5 +1,5 @@
 [project]
-name = "ndev-batch"
+name = "nbatch"
 dynamic = ["version"]
 description = "Flexible batch processing utilities"
 readme = "README.md"
@@ -39,13 +39,13 @@ dev = [
 ]
 
 [project.entry-points."napari.manifest"]
-ndev-batch = "ndev_batch:napari.yaml"
+nbatch = "nbatch:napari.yaml"
 
 [project.urls]
-"Bug Tracker" = "https://github.com/ndev-kit/ndev-batch/issues"
-"Documentation" = "https://github.com/ndev-kit/ndev-batch#README.md"
-"Source Code" = "https://github.com/ndev-kit/ndev-batch"
-"User Support" = "https://github.com/ndev-kit/ndev-batch/issues"
+"Bug Tracker" = "https://github.com/ndev-kit/nbatch/issues"
+"Documentation" = "https://github.com/ndev-kit/nbatch#README.md"
+"Source Code" = "https://github.com/ndev-kit/nbatch"
+"User Support" = "https://github.com/ndev-kit/nbatch/issues"
 
 [build-system]
 requires = ["setuptools>=42.0.0", "setuptools_scm"]
@@ -61,7 +61,7 @@ where = ["src"]
 "*" = ["*.yaml"]
 
 [tool.setuptools_scm]
-write_to = "src/ndev_batch/_version.py"
+write_to = "src/nbatch/_version.py"
 fallback_version = "0.0.1+nogit"
 
 [tool.pytest.ini_options]

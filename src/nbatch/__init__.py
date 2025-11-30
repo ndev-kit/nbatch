@@ -1,6 +1,6 @@
-"""ndev-batch: Zero-dependency batch processing utilities.
+"""nbatch: Lightweight batch processing utilities.
 
-This package provides a lightweight, dependency-free foundation for batch
+This package provides a lightweight foundation for batch
 processing operations. It's designed to work with napari plugins but has
 no napari or Qt dependencies itself.
 
@@ -19,7 +19,7 @@ Examples
 --------
 Basic batch processing:
 
->>> from ndev_batch import batch, BatchContext
+>>> from nbatch import batch, BatchContext
 >>> @batch
 ... def process(path):
 ...     return path.stem.upper()
@@ -38,7 +38,7 @@ With progress tracking:
 
 With logging:
 
->>> from ndev_batch import batch_logger
+>>> from nbatch import batch_logger
 >>> with batch_logger(log_file="output/log.txt", header={"Files": 100}) as log:
 ...     for result, ctx in process(files, with_context=True):
 ...         log(ctx, f"Processed: {result}")
@@ -49,10 +49,10 @@ try:
 except ImportError:
     __version__ = 'unknown'
 
-from ndev_batch._context import BatchContext
-from ndev_batch._decorator import batch
-from ndev_batch._discovery import discover_files, is_batch_input
-from ndev_batch._logging import BatchLogger, batch_logger
+from nbatch._context import BatchContext
+from nbatch._decorator import batch
+from nbatch._discovery import discover_files, is_batch_input
+from nbatch._logging import BatchLogger, batch_logger
 
 __all__ = [
     # Core decorator

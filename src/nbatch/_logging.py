@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Literal
 if TYPE_CHECKING:
     from collections.abc import Generator, Mapping
 
-    from ndev_batch._context import BatchContext
+    from nbatch._context import BatchContext
 
 # Default format for batch processing logs
 DEFAULT_LOG_FORMAT = '%(asctime)s - %(levelname)s - %(message)s'

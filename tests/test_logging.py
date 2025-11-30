@@ -4,7 +4,7 @@ import logging
 
 import pytest
 
-from ndev_batch import BatchContext, BatchLogger, batch_logger
+from nbatch import BatchContext, BatchLogger, batch_logger
 
 
 class TestBatchLogger:

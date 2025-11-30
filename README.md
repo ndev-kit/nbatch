@@ -1,17 +1,17 @@
-# ndev-batch
+# nbatch
 
-[![License BSD-3](https://img.shields.io/pypi/l/ndev-batch.svg?color=green)](https://github.com/ndev-kit/ndev-batch/raw/main/LICENSE)
-[![PyPI](https://img.shields.io/pypi/v/ndev-batch.svg?color=green)](https://pypi.org/project/ndev-batch)
-[![Python Version](https://img.shields.io/pypi/pyversions/ndev-batch.svg?color=green)](https://python.org)
-[![tests](https://github.com/ndev-kit/ndev-batch/workflows/tests/badge.svg)](https://github.com/ndev-kit/ndev-batch/actions)
-[![codecov](https://codecov.io/gh/ndev-kit/ndev-batch/branch/main/graph/badge.svg)](https://codecov.io/gh/ndev-kit/ndev-batch)
-[![napari hub](https://img.shields.io/endpoint?url=https://api.napari-hub.org/shields/ndev-batch)](https://napari-hub.org/plugins/ndev-batch)
+[![License BSD-3](https://img.shields.io/pypi/l/nbatch.svg?color=green)](https://github.com/ndev-kit/nbatch/raw/main/LICENSE)
+[![PyPI](https://img.shields.io/pypi/v/nbatch.svg?color=green)](https://pypi.org/project/nbatch)
+[![Python Version](https://img.shields.io/pypi/pyversions/nbatch.svg?color=green)](https://python.org)
+[![tests](https://github.com/ndev-kit/nbatch/workflows/tests/badge.svg)](https://github.com/ndev-kit/nbatch/actions)
+[![codecov](https://codecov.io/gh/ndev-kit/nbatch/branch/main/graph/badge.svg)](https://codecov.io/gh/ndev-kit/nbatch)
+[![napari hub](https://img.shields.io/endpoint?url=https://api.napari-hub.org/shields/nbatch)](https://napari-hub.org/plugins/nbatch)
 [![npe2](https://img.shields.io/badge/plugin-npe2-blue?link=https://napari.org/stable/plugins/index.html)](https://napari.org/stable/plugins/index.html)
 [![Copier](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/copier-org/copier/master/img/badge/badge-grayscale-inverted-border-purple.json)](https://github.com/copier-org/copier)
 
 **Lightweight batch processing utilities for the ndev-kit ecosystem.**
 
-ndev-batch provides a foundation for batch processing operations. It's designed to work seamlessly with napari plugins but has **no napari or Qt dependencies**.
+nbatch provides a foundation for batch processing operations. It's designed to work seamlessly with napari plugins but has **no napari or Qt dependencies**.
 
 ## Features
 
@@ -24,7 +24,7 @@ ndev-batch provides a foundation for batch processing operations. It's designed 
 ## Installation
 
 ```bash
-pip install ndev-batch
+pip install nbatch
 ```
 
 For development:
@@ -41,7 +41,7 @@ The `@batch` decorator transforms a function that processes a single item into o
 
 ```python
 from pathlib import Path
-from ndev_batch import batch
+from nbatch import batch
 
 @batch
 def process_image(path: Path) -> str:
@@ -127,7 +127,7 @@ def process_top_level(path): ...
 Or use `discover_files()` directly:
 
 ```python
-from ndev_batch import discover_files
+from nbatch import discover_files
 
 # From directory with patterns
 files = discover_files("/data/images", patterns=["*.tif", "*.png"])
@@ -141,7 +141,7 @@ files = discover_files([path1, path2, path3])
 Use `batch_logger` for structured logging. By default, it outputs to the console (stderr). Optionally log to a file:
 
 ```python
-from ndev_batch import batch, batch_logger
+from nbatch import batch, batch_logger
 
 @batch(with_context=True)
 def process(path):
@@ -181,11 +181,11 @@ Batch processing completed at 2025-01-29 10:35:00
 
 ## Integration with napari
 
-ndev-batch is designed to work seamlessly with napari's `@thread_worker`:
+nbatch is designed to work seamlessly with napari's `@thread_worker`:
 
 ```python
 from napari.qt.threading import thread_worker
-from ndev_batch import batch, batch_logger
+from nbatch import batch, batch_logger
 
 @batch(with_context=True, on_error='continue')
 def process_image(path, model, output_dir):
@@ -272,7 +272,7 @@ def batch_logger(
 Contributions are welcome! Please ensure tests pass before submitting a pull request:
 
 ```bash
-pytest --cov=src/ndev_batch
+pytest --cov=src/nbatch
 ```
 
 ## License
@@ -281,4 +281,4 @@ Distributed under the terms of the [BSD-3](http://opensource.org/licenses/BSD-3-
 
 ## Part of ndev-kit
 
-ndev-batch is part of the [ndev-kit](https://github.com/ndev-kit) ecosystem for no-code bioimage analysis in napari.
+nbatch is part of the [ndev-kit](https://github.com/ndev-kit) ecosystem for no-code bioimage analysis in napari.

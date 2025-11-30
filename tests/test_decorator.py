@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from ndev_batch import BatchContext, batch
+from nbatch import BatchContext, batch
 
 
 class TestBatchDecorator:
@@ -302,7 +302,7 @@ class TestBatchIntegration:
 
     def test_with_batch_logger(self, tmp_path):
         """Test @batch works well with batch_logger."""
-        from ndev_batch import batch_logger
+        from nbatch import batch_logger
 
         files = [tmp_path / 'a.tif', tmp_path / 'b.tif']
         for f in files:

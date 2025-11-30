@@ -1,5 +1,5 @@
-name: ndev-batch
-display_name: ndev Batch
+name: nbatch
+display_name: nbatch
 # This package provides batch processing utilities, not napari widgets
 # It is registered with napari for visibility in the plugin ecosystem
 visibility: public

@@ -19,8 +19,8 @@ from typing import (
     overload,
 )
 
-from ndev_batch._context import BatchContext
-from ndev_batch._discovery import discover_files, is_batch_input
+from nbatch._context import BatchContext
+from nbatch._discovery import discover_files, is_batch_input
 
 if TYPE_CHECKING:
     from collections.abc import Generator, Iterable, Sequence

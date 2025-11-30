@@ -2,7 +2,7 @@
 
 import pytest
 
-from ndev_batch import BatchContext
+from nbatch import BatchContext
 
 
 class TestBatchContext:
