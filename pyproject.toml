@@ -50,7 +50,7 @@ dev = [
     "pytest",  # https://docs.pytest.org/en/latest/contents.html
     "pytest-cov",  # https://pytest-cov.readthedocs.io/en/latest/
     "pytest-qt",  # Qt testing utilities (qtbot fixture)
-    "nbatch[all]",  # Include napari and Qt for full test coverage
+    "napari[pyqt6]",  # Include napari and Qt for full test coverage
 ]
 
 [project.entry-points."napari.manifest"]
