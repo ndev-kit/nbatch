@@ -33,7 +33,7 @@ T = TypeVar('T')
 OnErrorType = Literal['raise', 'continue', 'skip']
 
 # Module-level logger for batch operations
-_logger = logging.getLogger('ndev_batch')
+_logger = logging.getLogger('nbatch')
 
 
 @overload

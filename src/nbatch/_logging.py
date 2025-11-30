@@ -151,7 +151,7 @@ def batch_logger(
     """
     # Generate unique logger name to avoid conflicts
     logger_id = id(log_file) if log_file else id(header)
-    logger_name = f'ndev_batch.batch_{logger_id}'
+    logger_name = f'nbatch.batch_{logger_id}'
 
     # Create logger
     logger = logging.getLogger(logger_name)
