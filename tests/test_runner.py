@@ -9,6 +9,14 @@ import pytest
 
 from nbatch import BatchRunner, batch
 
+# Check for napari/Qt availability for threading tests
+try:
+    from napari.qt.threading import create_worker  # noqa: F401
+
+    HAS_NAPARI = True
+except ImportError:
+    HAS_NAPARI = False
+
 
 class TestBatchRunnerBasic:
     """Test basic BatchRunner functionality."""
@@ -442,3 +450,195 @@ class TestBatchRunnerIntegrationWithBatchDecorator:
         # The @batch decorator's on_error doesn't apply here
         assert 'A' in results
         assert 'C' in results
+
+
+class TestBatchRunnerNapariThreading:
+    """Test BatchRunner with napari's threading (requires Qt event loop)."""
+
+    def test_run_napari_threaded_basic(self, qtbot):
+        """Test basic napari threaded execution."""
+        results = []
+        completed = []
+
+        def process(item):
+            return item * 2
+
+        runner = BatchRunner(
+            on_item_complete=lambda r, ctx: results.append(r),
+            on_complete=lambda: completed.append(True),
+        )
+
+        runner.run(process, [1, 2, 3], threaded=True)
+
+        # Use qtbot to wait for completion
+        def check_complete():
+            assert not runner.is_running
+
+        qtbot.waitUntil(check_complete, timeout=5000)
+
+        assert sorted(results) == [2, 4, 6]
+        assert completed == [True]
+
+    def test_run_napari_threaded_with_context(self, qtbot):
+        """Test napari threaded execution provides correct context."""
+        contexts = []
+
+        def process(item):
+            return item
+
+        runner = BatchRunner(
+            on_item_complete=lambda r, ctx: contexts.append(
+                (ctx.index, ctx.total, ctx.item)
+            ),
+        )
+
+        runner.run(process, ['a', 'b', 'c'], threaded=True)
+
+        qtbot.waitUntil(lambda: not runner.is_running, timeout=5000)
+
+        assert len(contexts) == 3
+        assert contexts[0] == (0, 3, 'a')
+        assert contexts[1] == (1, 3, 'b')
+        assert contexts[2] == (2, 3, 'c')
+
+    def test_run_napari_threaded_with_errors(self, qtbot):
+        """Test napari threaded execution handles errors."""
+        results = []
+        errors = []
+
+        def process(item):
+            if item == 2:
+                raise ValueError('Item 2 fails!')
+            return item * 10
+
+        runner = BatchRunner(
+            on_item_complete=lambda r, ctx: results.append(r),
+            on_error=lambda ctx, e: errors.append((ctx.item, str(e))),
+        )
+
+        runner.run(process, [1, 2, 3], threaded=True)
+
+        qtbot.waitUntil(lambda: not runner.is_running, timeout=5000)
+
+        assert 10 in results
+        assert 30 in results
+        assert len(errors) == 1
+        assert errors[0][0] == 2
+        assert 'Item 2 fails!' in errors[0][1]
+
+    def test_run_napari_threaded_cancellation(self, qtbot):
+        """Test cancellation during napari threaded execution."""
+        processed = []
+        cancelled = []
+
+        def process(item):
+            processed.append(item)
+            time.sleep(0.1)  # Slow enough to allow cancellation
+            return item
+
+        runner = BatchRunner(
+            on_cancel=lambda: cancelled.append(True),
+        )
+
+        runner.run(process, [1, 2, 3, 4, 5], threaded=True)
+
+        # Wait a bit then cancel
+        qtbot.wait(150)  # Let first item or two process
+        runner.cancel()
+
+        qtbot.waitUntil(lambda: not runner.is_running, timeout=5000)
+
+        # Should have processed fewer than all items
+        assert len(processed) < 5
+        assert runner.was_cancelled is True
+        assert cancelled == [True]
+
+    def test_run_napari_threaded_with_logging(self, qtbot, tmp_path):
+        """Test napari threaded execution with logging."""
+        log_file = tmp_path / 'napari_batch.log'
+
+        def process(item):
+            return item.upper()
+
+        runner = BatchRunner()
+        runner.run(
+            process,
+            ['a', 'b', 'c'],
+            threaded=True,
+            log_file=log_file,
+            log_header={'Test': 'napari threading'},
+        )
+
+        qtbot.waitUntil(lambda: not runner.is_running, timeout=5000)
+
+        assert log_file.exists()
+        content = log_file.read_text()
+        assert 'Test: napari threading' in content
+        assert 'Completed' in content
+
+    def test_run_napari_threaded_with_files(self, qtbot, tmp_path):
+        """Test napari threaded execution with file discovery."""
+        # Create test files
+        for name in ['img1.tif', 'img2.tif', 'img3.tif']:
+            (tmp_path / name).write_text(name)
+
+        results = []
+
+        def process(path):
+            return path.stem
+
+        runner = BatchRunner(
+            on_item_complete=lambda r, ctx: results.append(r),
+        )
+
+        runner.run(process, tmp_path, patterns='*.tif', threaded=True)
+
+        qtbot.waitUntil(lambda: not runner.is_running, timeout=5000)
+
+        assert sorted(results) == ['img1', 'img2', 'img3']
+
+    def test_run_napari_threaded_progress_updates(self, qtbot):
+        """Test that progress updates work correctly for UI integration."""
+        progress_values = []
+
+        def process(item):
+            return item
+
+        def on_progress(result, ctx):
+            # Simulate progress bar update
+            progress_values.append(ctx.index + 1)
+
+        runner = BatchRunner(on_item_complete=on_progress)
+        runner.run(process, [1, 2, 3, 4, 5], threaded=True)
+
+        qtbot.waitUntil(lambda: not runner.is_running, timeout=5000)
+
+        # Progress should have been recorded for each item
+        assert progress_values == [1, 2, 3, 4, 5]
+
+    def test_runner_reusable_napari_threaded(self, qtbot):
+        """Test runner can be reused for multiple napari threaded batches."""
+        results = []
+        batch_count = [0]
+
+        def on_complete():
+            batch_count[0] += 1
+
+        runner = BatchRunner(
+            on_item_complete=lambda r, ctx: results.append(r),
+            on_complete=on_complete,
+        )
+
+        # First batch
+        runner.run(lambda x: x * 2, [1, 2], threaded=True)
+        qtbot.waitUntil(lambda: not runner.is_running, timeout=5000)
+
+        assert sorted(results) == [2, 4]
+        assert batch_count[0] == 1
+
+        # Second batch
+        runner.run(lambda x: x + 10, [1, 2], threaded=True)
+        qtbot.waitUntil(lambda: not runner.is_running, timeout=5000)
+
+        assert sorted(results) == [2, 4, 11, 12]
+        assert batch_count[0] == 2

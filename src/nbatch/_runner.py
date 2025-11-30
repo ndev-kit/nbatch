@@ -137,6 +137,7 @@ class BatchRunner:
             if not self._is_running:
                 return
             self._cancel_requested = True
+            self._was_cancelled = True  # Set immediately for threaded cases
 
         # If using napari worker, request quit
         if self._worker is not None and HAS_NAPARI:
@@ -262,7 +263,7 @@ class BatchRunner:
 
         self._worker = create_worker(_worker_func)
         self._worker.yielded.connect(self._handle_yielded)
-        self._worker.finished.connect(lambda _: self._handle_finished())
+        self._worker.finished.connect(self._handle_finished)
         self._worker.start()
 
     def _run_thread_fallback(
