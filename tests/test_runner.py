@@ -452,6 +452,7 @@ class TestBatchRunnerIntegrationWithBatchDecorator:
         assert 'C' in results
 
 
+@pytest.mark.skipif(not HAS_NAPARI, reason='requires napari and Qt')
 class TestBatchRunnerNapariThreading:
     """Test BatchRunner with napari's threading (requires Qt event loop)."""
 

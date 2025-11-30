@@ -138,11 +138,13 @@ class BatchRunner:
                 return
             self._cancel_requested = True
             self._was_cancelled = True  # Set immediately for threaded cases
+            # Store local reference to avoid race condition with _handle_finished
+            worker = self._worker if HAS_NAPARI else None
 
         # If using napari worker, request quit
-        if self._worker is not None and HAS_NAPARI:
+        if worker is not None:
             with contextlib.suppress(RuntimeError):
-                self._worker.quit()
+                worker.quit()
 
     def run(
         self,
@@ -233,8 +235,8 @@ class BatchRunner:
                 # Single file path
                 return [items]
         elif isinstance(items, list | tuple):
-            # Check if it looks like file paths that exist
-            if items and isinstance(items[0], Path) and items[0].exists():
+            # Check if all items are Path objects (use file discovery)
+            if items and all(isinstance(item, Path) for item in items):
                 return discover_files(items)
             # Otherwise treat as generic items (strings, numbers, etc.)
             return list(items)
@@ -278,6 +280,9 @@ class BatchRunner:
         """Run batch using standard threading (fallback when napari unavailable)."""
         import concurrent.futures
 
+        # Store executor to allow shutdown after completion
+        self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+
         def _thread_target():
             try:
                 for result, ctx, error in self._process_items(
@@ -286,9 +291,10 @@ class BatchRunner:
                     self._handle_yielded((result, ctx, error))
             finally:
                 self._handle_finished()
+                # Shutdown executor to release resources
+                self._executor.shutdown(wait=False)
 
-        executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
-        self._worker = executor.submit(_thread_target)
+        self._worker = self._executor.submit(_thread_target)
 
     def _run_sync(
         self,
@@ -405,7 +411,13 @@ class BatchRunner:
 
 def _item_name(item: Any) -> str:
     """Get a display name for an item."""
-    if isinstance(item, Path) or hasattr(item, 'name'):
+    if isinstance(item, Path):
         return item.name
+    elif hasattr(item, 'name'):
+        name = item.name
+        # Avoid returning a method or function
+        if callable(name):
+            return str(item)
+        return str(name)
     else:
         return str(item)
