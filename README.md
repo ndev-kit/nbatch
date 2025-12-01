@@ -204,6 +204,7 @@ class MyWidget:
         
         # Create runner once - reusable for all batches
         self.runner = BatchRunner(
+            on_start=self._on_batch_start,
             on_item_complete=self._on_item_complete,
             on_complete=self._on_batch_complete,
             on_error=self._on_item_error,
@@ -213,6 +214,11 @@ class MyWidget:
         self._run_button.clicked.connect(self.run_batch)
         self._cancel_button.clicked.connect(self.runner.cancel)
     
+    def _on_batch_start(self, total):
+        """Called when batch starts with total item count."""
+        self._progress_bar.setValue(0)
+        self._progress_bar.setMaximum(total)
+    
     def _on_item_complete(self, result, ctx):
         """Called after each item completes."""
         self._progress_bar.setValue(ctx.index + 1)
@@ -221,7 +227,11 @@ class MyWidget:
             self._viewer.add_image(result, name=f"Result {ctx.index}")
     
     def _on_batch_complete(self):
-        self._progress_bar.label = "Complete!"
+        errors = self.runner.error_count
+        if errors > 0:
+            self._progress_bar.label = f"Done with {errors} errors"
+        else:
+            self._progress_bar.label = "Complete!"
     
     def _on_item_error(self, ctx, exception):
         self._progress_bar.label = f"Error on {ctx.item.name}"
@@ -231,7 +241,6 @@ class MyWidget:
     
     def run_batch(self):
         """Triggered by 'Run' button - just one line!"""
-        self._progress_bar.max = len(self.files)
         self.runner.run(
             process_image,
             self.files,
@@ -335,6 +344,7 @@ def batch_logger(
 class BatchRunner:
     def __init__(
         self,
+        on_start: Callable[[int], None] | None = None,
         on_item_complete: Callable[[Any, BatchContext], None] | None = None,
         on_complete: Callable[[], None] | None = None,
         on_error: Callable[[BatchContext, Exception], None] | None = None,
@@ -351,7 +361,7 @@ class BatchRunner:
         log_header: Mapping[str, object] | None = None,
         patterns: str | Sequence[str] = '*',
         recursive: bool = False,
-        **kwargs,
+        **kwargs,  # Passed to func!
     ) -> None: ...
     
     def cancel(self) -> None: ...
@@ -361,6 +371,9 @@ class BatchRunner:
     
     @property
     def was_cancelled(self) -> bool: ...
+    
+    @property
+    def error_count(self) -> int: ...  # Errors in current/last batch
 ```
 
 ## Contributing

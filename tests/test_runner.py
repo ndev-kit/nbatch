@@ -29,22 +29,76 @@ class TestBatchRunnerBasic:
 
     def test_init_with_callbacks(self):
         """Test BatchRunner initializes with callbacks."""
+        on_start = MagicMock()
         on_item = MagicMock()
         on_complete = MagicMock()
         on_error = MagicMock()
         on_cancel = MagicMock()
 
         runner = BatchRunner(
+            on_start=on_start,
             on_item_complete=on_item,
             on_complete=on_complete,
             on_error=on_error,
             on_cancel=on_cancel,
         )
 
+        assert runner._on_start is on_start
         assert runner._on_item_complete is on_item
         assert runner._on_complete is on_complete
         assert runner._on_error is on_error
         assert runner._on_cancel is on_cancel
+
+    def test_error_count_initial(self):
+        """Test error_count is 0 initially."""
+        runner = BatchRunner()
+        assert runner.error_count == 0
+
+    def test_on_start_callback(self):
+        """Test on_start callback is called with total count."""
+        on_start = MagicMock()
+
+        def process(item):
+            return item
+
+        runner = BatchRunner(on_start=on_start)
+        runner.run(process, [1, 2, 3, 4, 5], threaded=False)
+
+        on_start.assert_called_once_with(5)
+
+    def test_error_count_tracking(self):
+        """Test error_count tracks errors during batch."""
+
+        def process(item):
+            if item in [2, 4]:
+                raise ValueError(f'Error on {item}')
+            return item
+
+        runner = BatchRunner()
+        runner.run(process, [1, 2, 3, 4, 5], threaded=False)
+
+        assert runner.error_count == 2
+
+    def test_error_count_reset_on_new_run(self):
+        """Test error_count is reset at start of each run."""
+
+        def fail_some(item):
+            if item == 2:
+                raise ValueError('Error')
+            return item
+
+        def succeed_all(item):
+            return item
+
+        runner = BatchRunner()
+
+        # First run with error
+        runner.run(fail_some, [1, 2, 3], threaded=False)
+        assert runner.error_count == 1
+
+        # Second run without errors - error_count should reset
+        runner.run(succeed_all, [1, 2, 3], threaded=False)
+        assert runner.error_count == 0
 
 
 class TestBatchRunnerSync:
@@ -684,3 +738,33 @@ class TestBatchRunnerNapariThreading:
 
         assert sorted(results) == [2, 4, 11, 12]
         assert batch_count[0] == 2
+
+    def test_on_start_callback_threaded(self, qtbot):
+        """Test on_start callback is called with total count in threaded mode."""
+        start_total = []
+
+        def process(item):
+            return item
+
+        runner = BatchRunner(on_start=lambda total: start_total.append(total))
+
+        runner.run(process, [1, 2, 3, 4, 5], threaded=True)
+
+        qtbot.waitUntil(lambda: not runner.is_running, timeout=5000)
+
+        assert start_total == [5]
+
+    def test_error_count_threaded(self, qtbot):
+        """Test error_count tracks errors correctly in threaded mode."""
+
+        def process(item):
+            if item in [2, 4]:
+                raise ValueError(f'Error on {item}')
+            return item
+
+        runner = BatchRunner()
+        runner.run(process, [1, 2, 3, 4, 5], threaded=True)
+
+        qtbot.waitUntil(lambda: not runner.is_running, timeout=5000)
+
+        assert runner.error_count == 2
