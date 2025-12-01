@@ -42,6 +42,9 @@ class BatchRunner:
 
     Parameters
     ----------
+    on_start : Callable[[int], None] | None, optional
+        Called when batch starts, receives total item count. Use to initialize
+        progress bars (e.g., ``on_start=lambda total: progress_bar.setMax(total)``).
     on_item_complete : Callable[[Any, BatchContext], None] | None, optional
         Called after each item completes successfully. Receives the result
         and BatchContext. Use for progress bars and adding results to viewer.
@@ -60,12 +63,15 @@ class BatchRunner:
         True if a batch is currently being processed.
     was_cancelled : bool
         True if the last batch was cancelled before completion.
+    error_count : int
+        Number of errors encountered in the current/last batch.
 
     Examples
     --------
     Basic usage in a napari widget:
 
     >>> runner = BatchRunner(
+    ...     on_start=lambda total: progress_bar.setMaximum(total),
     ...     on_item_complete=lambda r, ctx: progress_bar.setValue(ctx.index + 1),
     ...     on_complete=lambda: print("Done!"),
     ... )
@@ -91,15 +97,26 @@ class BatchRunner:
     ...     log_file="output/batch.log",
     ...     log_header={"Input": str(input_dir), "Files": len(files)},
     ... )
+
+    Passing additional arguments to the function (no partial needed!):
+
+    >>> runner.run(
+    ...     process_image,
+    ...     files,
+    ...     output_dir=output_path,  # passed to process_image
+    ...     sigma=2.0,               # passed to process_image
+    ... )
     """
 
     def __init__(
         self,
+        on_start: Callable[[int], None] | None = None,
         on_item_complete: Callable[[Any, BatchContext], None] | None = None,
         on_complete: Callable[[], None] | None = None,
         on_error: Callable[[BatchContext, Exception], None] | None = None,
         on_cancel: Callable[[], None] | None = None,
     ):
+        self._on_start = on_start
         self._on_item_complete = on_item_complete
         self._on_complete = on_complete
         self._on_error = on_error
@@ -110,6 +127,7 @@ class BatchRunner:
         self._cancel_requested = False
         self._is_running = False
         self._was_cancelled = False
+        self._error_count = 0
         self._lock = threading.Lock()
 
         # For logging within run
@@ -126,6 +144,12 @@ class BatchRunner:
         """Check if the last batch was cancelled."""
         with self._lock:
             return self._was_cancelled
+
+    @property
+    def error_count(self) -> int:
+        """Number of errors encountered in the current/last batch."""
+        with self._lock:
+            return self._error_count
 
     def cancel(self) -> None:
         """Request cancellation of the running batch.
@@ -202,9 +226,14 @@ class BatchRunner:
             self._is_running = True
             self._cancel_requested = False
             self._was_cancelled = False
+            self._error_count = 0
 
         # Normalize items to a list
         items_list = self._normalize_items(items, patterns, recursive)
+
+        # Call on_start callback with total count
+        if self._on_start is not None:
+            self._on_start(len(items_list))
 
         if threaded and HAS_NAPARI:
             self._run_napari_threaded(
@@ -388,6 +417,8 @@ class BatchRunner:
         result, ctx, error = value
 
         if error is not None:
+            with self._lock:
+                self._error_count += 1
             if self._on_error is not None:
                 self._on_error(ctx, error)
         else:
