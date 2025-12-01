@@ -148,6 +148,47 @@ class TestBatchRunnerSync:
 
         assert results == ['10!', '20!', '30!']
 
+    def test_kwargs_replaces_partial(self):
+        """Test kwargs pattern as alternative to functools.partial.
+
+        This demonstrates the recommended pattern for passing extra arguments
+        to batch functions without using functools.partial.
+        """
+        from functools import partial
+
+        results_kwargs = []
+        results_partial = []
+
+        def process_item(item, output_dir, sigma=1.0):
+            """Simulate processing with configurable parameters."""
+            return f'{item}_sigma{sigma}_to_{output_dir}'
+
+        # Using kwargs (recommended pattern - cleaner!)
+        runner1 = BatchRunner(
+            on_item_complete=lambda r, ctx: results_kwargs.append(r),
+        )
+        runner1.run(
+            process_item,
+            ['img1', 'img2'],
+            output_dir='output',
+            sigma=2.5,
+            threaded=False,
+        )
+
+        # Using partial (old pattern - still works but more verbose)
+        runner2 = BatchRunner(
+            on_item_complete=lambda r, ctx: results_partial.append(r),
+        )
+        process_func = partial(process_item, output_dir='output', sigma=2.5)
+        runner2.run(process_func, ['img1', 'img2'], threaded=False)
+
+        # Both approaches produce identical results
+        assert results_kwargs == results_partial
+        assert results_kwargs == [
+            'img1_sigma2.5_to_output',
+            'img2_sigma2.5_to_output',
+        ]
+
     def test_run_sync_context_values(self):
         """Test BatchContext values in callbacks."""
         contexts = []
