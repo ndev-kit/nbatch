@@ -41,7 +41,7 @@ qtpy-backend = [
 ]
 all = [
     "nbatch[napari]",
-    "nbatch[qtpy-backed]",
+    "nbatch[qtpy-backend]",
 ]
 
 [dependency-groups]
