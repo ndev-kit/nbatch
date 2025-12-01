@@ -44,7 +44,7 @@ class BatchRunner:
     ----------
     on_start : Callable[[int], None] | None, optional
         Called when batch starts, receives total item count. Use to initialize
-        progress bars (e.g., ``on_start=lambda total: progress_bar.setMax(total)``).
+        progress bars (e.g., ``on_start=lambda total: progress_bar.setMaximum(total)``).
     on_item_complete : Callable[[Any, BatchContext], None] | None, optional
         Called after each item completes successfully. Receives the result
         and BatchContext. Use for progress bars and adding results to viewer.

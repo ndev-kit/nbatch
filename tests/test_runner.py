@@ -697,3 +697,33 @@ class TestBatchRunnerNapariThreading:
 
         assert sorted(results) == [2, 4, 11, 12]
         assert batch_count[0] == 2
+
+    def test_on_start_callback_threaded(self, qtbot):
+        """Test on_start callback is called with total count in threaded mode."""
+        start_total = []
+
+        def process(item):
+            return item
+
+        runner = BatchRunner(on_start=lambda total: start_total.append(total))
+
+        runner.run(process, [1, 2, 3, 4, 5], threaded=True)
+
+        qtbot.waitUntil(lambda: not runner.is_running, timeout=5000)
+
+        assert start_total == [5]
+
+    def test_error_count_threaded(self, qtbot):
+        """Test error_count tracks errors correctly in threaded mode."""
+
+        def process(item):
+            if item in [2, 4]:
+                raise ValueError(f'Error on {item}')
+            return item
+
+        runner = BatchRunner()
+        runner.run(process, [1, 2, 3, 4, 5], threaded=True)
+
+        qtbot.waitUntil(lambda: not runner.is_running, timeout=5000)
+
+        assert runner.error_count == 2
