@@ -492,7 +492,7 @@ class TestBatchRunnerThreaded:
         # Force the fallback path by pretending napari isn't available
         import nbatch._runner as runner_module
 
-        monkeypatch.setattr(runner_module, 'HAS_NAPARI', False)
+        monkeypatch.setattr(runner_module, '_HAS_NAPARI', False)
 
         results = []
         completed = []

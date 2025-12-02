@@ -23,14 +23,21 @@ if TYPE_CHECKING:
 # Module-level logger
 _logger = logging.getLogger('nbatch.runner')
 
-# Check for napari availability
-try:
-    from napari.qt.threading import create_worker
+# Lazy napari availability check - don't import at module level
+_HAS_NAPARI: bool | None = None
 
-    HAS_NAPARI = True
-except ImportError:
-    HAS_NAPARI = False
-    create_worker = None
+
+def _check_napari() -> bool:
+    """Lazily check for napari availability."""
+    global _HAS_NAPARI
+    if _HAS_NAPARI is None:
+        try:
+            import napari.qt.threading  # noqa: F401
+
+            _HAS_NAPARI = True
+        except ImportError:
+            _HAS_NAPARI = False
+    return _HAS_NAPARI
 
 
 class BatchRunner:
@@ -163,7 +170,7 @@ class BatchRunner:
             self._cancel_requested = True
             self._was_cancelled = True  # Set immediately for threaded cases
             # Store local reference to avoid race condition with _handle_finished
-            worker = self._worker if HAS_NAPARI else None
+            worker = self._worker if _check_napari() else None
 
         # If using napari worker, request quit
         if worker is not None:
@@ -235,7 +242,7 @@ class BatchRunner:
         if self._on_start is not None:
             self._on_start(len(items_list))
 
-        if threaded and HAS_NAPARI:
+        if threaded and _check_napari():
             self._run_napari_threaded(
                 func, items_list, args, kwargs, log_file, log_header
             )
@@ -285,6 +292,7 @@ class BatchRunner:
         log_header: Mapping[str, object] | None,
     ) -> None:
         """Run batch using napari's create_worker for Qt-safe threading."""
+        from napari.qt.threading import create_worker
 
         def _worker_func():
             """Generator function for napari worker."""
