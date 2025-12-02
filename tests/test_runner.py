@@ -489,10 +489,17 @@ class TestBatchRunnerThreaded:
 
     def test_run_threaded_fallback_no_napari(self, monkeypatch):
         """Test threaded execution using fallback (concurrent.futures)."""
-        # Force the fallback path by pretending napari isn't available
-        import nbatch._runner as runner_module
+        # Force the fallback path by making napari import fail
+        import builtins
 
-        monkeypatch.setattr(runner_module, '_HAS_NAPARI', False)
+        real_import = builtins.__import__
+
+        def mock_import(name, *args, **kwargs):
+            if name == 'napari.qt.threading' or name.startswith('napari'):
+                raise ImportError('napari not available')
+            return real_import(name, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, '__import__', mock_import)
 
         results = []
         completed = []
@@ -506,7 +513,7 @@ class TestBatchRunnerThreaded:
             on_complete=lambda: completed.append(True),
         )
 
-        # Run threaded (will use fallback since we monkeypatched HAS_NAPARI)
+        # Run threaded (will use fallback since napari import fails)
         runner.run(process, [1, 2, 3], threaded=True)
 
         # Wait for completion

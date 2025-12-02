@@ -23,22 +23,6 @@ if TYPE_CHECKING:
 # Module-level logger
 _logger = logging.getLogger('nbatch.runner')
 
-# Lazy napari availability check - don't import at module level
-_HAS_NAPARI: bool | None = None
-
-
-def _check_napari() -> bool:
-    """Lazily check for napari availability."""
-    global _HAS_NAPARI
-    if _HAS_NAPARI is None:
-        try:
-            import napari.qt.threading  # noqa: F401
-
-            _HAS_NAPARI = True
-        except ImportError:
-            _HAS_NAPARI = False
-    return _HAS_NAPARI
-
 
 class BatchRunner:
     """Orchestrates batch operations with threading, progress, and cancellation.
@@ -170,10 +154,11 @@ class BatchRunner:
             self._cancel_requested = True
             self._was_cancelled = True  # Set immediately for threaded cases
             # Store local reference to avoid race condition with _handle_finished
-            worker = self._worker if _check_napari() else None
+            # Check for quit method to determine if it's a napari worker
+            worker = self._worker
 
-        # If using napari worker, request quit
-        if worker is not None:
+        # If using napari worker (has quit method), request quit
+        if worker is not None and hasattr(worker, 'quit'):
             with contextlib.suppress(RuntimeError):
                 worker.quit()
 
@@ -242,14 +227,18 @@ class BatchRunner:
         if self._on_start is not None:
             self._on_start(len(items_list))
 
-        if threaded and _check_napari():
-            self._run_napari_threaded(
-                func, items_list, args, kwargs, log_file, log_header
-            )
-        elif threaded:
-            self._run_thread_fallback(
-                func, items_list, args, kwargs, log_file, log_header
-            )
+        # Try napari threading first, fall back to standard threading
+        if threaded:
+            try:
+                import napari.qt.threading  # noqa: F401
+
+                self._run_napari_threaded(
+                    func, items_list, args, kwargs, log_file, log_header
+                )
+            except ImportError:
+                self._run_thread_fallback(
+                    func, items_list, args, kwargs, log_file, log_header
+                )
         else:
             self._run_sync(
                 func, items_list, args, kwargs, log_file, log_header
